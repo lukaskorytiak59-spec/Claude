@@ -9,6 +9,7 @@ import argparse
 import base64
 import os
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -80,9 +81,52 @@ def generate_stability(prompt, negative_prompt, count, seed):
     return images
 
 
+def generate_leonardo(prompt, negative_prompt, count, seed):
+    api_key = os.environ.get("LEONARDO_API_KEY")
+    if not api_key:
+        sys.exit("Chyba LEONARDO_API_KEY v prostredi (.env).")
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "accept": "application/json",
+        "content-type": "application/json",
+    }
+
+    resp = requests.post(
+        "https://cloud.leonardo.ai/api/rest/v1/generations",
+        headers=headers,
+        json={
+            "prompt": prompt,
+            "negative_prompt": negative_prompt,
+            "num_images": count,
+            "width": 1024,
+            "height": 1024,
+            "seed": seed,
+        },
+        timeout=60,
+    )
+    resp.raise_for_status()
+    generation_id = resp.json()["sdGenerationJob"]["generationId"]
+
+    status_url = f"https://cloud.leonardo.ai/api/rest/v1/generations/{generation_id}"
+    for _ in range(60):  # poll up to ~2 min
+        time.sleep(2)
+        status_resp = requests.get(status_url, headers=headers, timeout=30)
+        status_resp.raise_for_status()
+        generation = status_resp.json()["generations_by_pk"]
+        if generation["status"] == "COMPLETE":
+            urls = [img["url"] for img in generation["generated_images"]]
+            return [requests.get(url, timeout=60).content for url in urls]
+        if generation["status"] == "FAILED":
+            sys.exit("Leonardo generovanie zlyhalo.")
+
+    sys.exit("Leonardo generovanie trvalo priveľmi dlho (timeout).")
+
+
 PROVIDERS = {
     "openai": generate_openai,
     "stability": generate_stability,
+    "leonardo": generate_leonardo,
 }
 
 
