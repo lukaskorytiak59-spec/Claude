@@ -6,11 +6,15 @@ name: "Nina Vale"
 # Vizuálny "fingerprint" — opakuje sa v každom prompte, aby postava vyzerala konzistentne
 visual_signature: >
   24 year old woman, shoulder-length wavy chestnut brown hair, green eyes,
-  light freckles across nose and cheeks, slim athletic build, warm smile
+  light freckles across nose and cheeks, toned athletic fitness figure, warm smile
+
+# Predvolený typ scény, ak --scene nešpecifikuje inak (viď scripts/generate_images.py --default-scene)
+default_scene: >
+  wearing a stylish swimsuit, professional swimwear/fashion catalogue photography
 
 style_keywords: >
-  natural lighting, photorealistic, high detail, portrait photography,
-  shot on 50mm lens, soft color grading
+  natural lighting, photorealistic, high detail, editorial fashion photography,
+  shot on 50mm lens, soft color grading, beach or poolside setting
 
 negative_prompt: >
   deformed, extra limbs, extra fingers, blurry, low quality, watermark,

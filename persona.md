@@ -30,9 +30,11 @@
 
 ## Obsahové piliere (content pillars)
 
-1. [Pilier 1 — napr. denné outfity / lifestyle zábery]
-2. [Pilier 2 — napr. tipy/rady z jej "oblasti záujmu"]
-3. [Pilier 3 — napr. zákulisie "tvorby", interakcia s komunitou]
+1. **Swimwear/fitness fashion** — hlavný pilier: profesionálne štylizované fotky v plavkách (beach/pool/editorial štýl), podobne ako marketing swimwear značiek — nie explicitné/sexuálne zábery.
+2. Fitness/lifestyle — tréningy, wellness, denný režim.
+3. Zákulisie "tvorby" — interakcia s komunitou, Q&A, behind-the-scenes.
+
+> Poznámka: `config/persona.yaml` má nastavené `default_scene` na swimwear/fashion catalogue štýl — každý beh `generate_images.py` bez `--scene` použije tento default.
 
 ## Publikačný plán
 

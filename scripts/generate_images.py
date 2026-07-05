@@ -88,7 +88,11 @@ PROVIDERS = {
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scene", required=True, help="Popis scény/pózy/outfitu")
+    parser.add_argument(
+        "--scene",
+        default=None,
+        help="Popis scény/pózy/outfitu (default: config/persona.yaml -> default_scene)",
+    )
     parser.add_argument("--count", type=int, default=1, help="Počet obrázkov")
     parser.add_argument(
         "--provider", choices=PROVIDERS.keys(), default="openai", help="API provider"
@@ -97,7 +101,10 @@ def main():
     args = parser.parse_args()
 
     persona = load_persona()
-    prompt = build_prompt(persona, args.scene)
+    scene = args.scene or persona.get("default_scene")
+    if not scene:
+        sys.exit("Zadaj --scene alebo nastav default_scene v config/persona.yaml")
+    prompt = build_prompt(persona, scene)
     seed = args.seed if args.seed is not None else persona.get("default_seed", 0)
 
     print(f"Prompt: {prompt}\n")
