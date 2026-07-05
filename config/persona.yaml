@@ -1,0 +1,20 @@
+# Konfigurácia postavy pre generovanie obrázkov.
+# Uprav tieto polia — používajú sa ako základ pre každý prompt v scripts/generate_images.py
+
+name: "Nina Vale"
+
+# Vizuálny "fingerprint" — opakuje sa v každom prompte, aby postava vyzerala konzistentne
+visual_signature: >
+  24 year old woman, shoulder-length wavy chestnut brown hair, green eyes,
+  light freckles across nose and cheeks, slim athletic build, warm smile
+
+style_keywords: >
+  natural lighting, photorealistic, high detail, portrait photography,
+  shot on 50mm lens, soft color grading
+
+negative_prompt: >
+  deformed, extra limbs, extra fingers, blurry, low quality, watermark,
+  text, disfigured, cartoon, anime, underage, child
+
+# Predvolený "seed" pre reprodukovateľnosť (podporované len niektorými providermi)
+default_seed: 42
