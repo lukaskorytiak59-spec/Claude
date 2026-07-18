@@ -55,6 +55,61 @@ const TIP_KEYFRAMES: {frame: number; x: number}[] = [
   {frame: 330, x: LINE_END_X},
 ];
 
+// The yellow line dips gently below each text label so it never crosses
+// the text, then eases back up and continues forward.
+const DIPS = EVENTS.filter((e) => e.year).map((e) => {
+  const charW = e.year.length > 10 ? 34 : 50;
+  return {
+    from: e.x + 30,
+    to: e.x + 48 + e.year.length * charW + 60,
+    depth: 85,
+  };
+});
+
+// The whole timeline heads gently downward as it progresses
+const SLOPE = 160 / (LINE_END_X - LINE_START_X);
+
+const baseYAt = (x: number): number =>
+  TIMELINE_Y + (x - LINE_START_X) * SLOPE;
+
+const lineYAt = (x: number): number => {
+  for (const d of DIPS) {
+    if (x > d.from && x < d.to) {
+      const t = (x - d.from) / (d.to - d.from);
+      return baseYAt(x) + d.depth * Math.sin(Math.PI * t);
+    }
+  }
+  return baseYAt(x);
+};
+
+const LINE_STEP = 4;
+const LINE_POINTS: {x: number; y: number; len: number}[] = (() => {
+  const pts: {x: number; y: number; len: number}[] = [];
+  let len = 0;
+  for (let x = LINE_START_X; x <= LINE_END_X; x += LINE_STEP) {
+    const y = lineYAt(x);
+    if (pts.length > 0) {
+      const prev = pts[pts.length - 1];
+      len += Math.hypot(x - prev.x, y - prev.y);
+    }
+    pts.push({x, y, len});
+  }
+  return pts;
+})();
+
+const LINE_TOTAL_LEN = LINE_POINTS[LINE_POINTS.length - 1].len;
+const LINE_PATH_D = LINE_POINTS.map(
+  (p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`
+).join(' ');
+
+const drawnLengthAt = (tipX: number): number => {
+  const i = Math.min(
+    Math.max(Math.floor((tipX - LINE_START_X) / LINE_STEP), 0),
+    LINE_POINTS.length - 1
+  );
+  return LINE_POINTS[i].len;
+};
+
 const tipXAt = (frame: number): number => {
   const first = TIP_KEYFRAMES[0];
   const last = TIP_KEYFRAMES[TIP_KEYFRAMES.length - 1];
@@ -105,7 +160,7 @@ const Node: React.FC<{event: TimelineEvent}> = ({event}) => {
       style={{
         position: 'absolute',
         left: event.x - 26,
-        top: TIMELINE_Y - 26,
+        top: baseYAt(event.x) - 26,
         width: 52,
         height: 52,
         borderRadius: '50%',
@@ -138,7 +193,7 @@ const YearLabel: React.FC<{event: TimelineEvent}> = ({event}) => {
       style={{
         position: 'absolute',
         left: event.x + 48,
-        top: TIMELINE_Y - 52,
+        top: baseYAt(event.x) - 52,
         fontFamily: 'Arial, Helvetica, sans-serif',
         fontWeight: 900,
         fontSize: event.year.length > 10 ? 56 : 84,
@@ -163,8 +218,8 @@ const Connector: React.FC<{event: TimelineEvent}> = ({event}) => {
   const local = frame - event.at - 8;
 
   const dir = event.side === 'up' ? -1 : 1;
-  const nodeY = TIMELINE_Y + dir * 26;
-  const elbowY = TIMELINE_Y + dir * CIRCLE_OFFSET_Y;
+  const nodeY = baseYAt(event.x) + dir * 26;
+  const elbowY = baseYAt(event.x) + dir * CIRCLE_OFFSET_Y;
   const circleCx = event.x + CIRCLE_OFFSET_X;
   const circleCy = elbowY;
 
@@ -240,7 +295,7 @@ const EventImage: React.FC<{event: TimelineEvent}> = ({event}) => {
 
   const dir = event.side === 'up' ? -1 : 1;
   const cx = event.x + CIRCLE_OFFSET_X;
-  const cy = TIMELINE_Y + dir * CIRCLE_OFFSET_Y;
+  const cy = baseYAt(event.x) + dir * CIRCLE_OFFSET_Y;
 
   const reveal = interpolate(local, [24, 50], [0, 1], {
     extrapolateLeft: 'clamp',
@@ -291,21 +346,30 @@ const EventImage: React.FC<{event: TimelineEvent}> = ({event}) => {
 
 const YellowLine: React.FC = () => {
   const frame = useCurrentFrame();
-  const tipX = tipXAt(frame);
+  const drawn = drawnLengthAt(tipXAt(frame));
 
   return (
-    <div
+    <svg
       style={{
         position: 'absolute',
-        left: LINE_START_X,
-        top: TIMELINE_Y - 9,
-        width: tipX - LINE_START_X,
-        height: 18,
-        borderRadius: 9,
-        backgroundColor: '#ffe600',
+        left: 0,
+        top: 0,
+        overflow: 'visible',
         filter: glow('rgba(255,230,0,0.9)', 16),
       }}
-    />
+      width={SCENE_WIDTH}
+      height={1080}
+    >
+      <path
+        d={LINE_PATH_D}
+        stroke="#ffe600"
+        strokeWidth={18}
+        fill="none"
+        strokeLinecap="round"
+        strokeDasharray={LINE_TOTAL_LEN}
+        strokeDashoffset={LINE_TOTAL_LEN - drawn}
+      />
+    </svg>
   );
 };
 
@@ -326,7 +390,7 @@ export const Timeline: React.FC = () => {
     Math.max(tipX + 120, halfViewW),
     SCENE_WIDTH - halfViewW
   );
-  const focusY = TIMELINE_Y;
+  const focusY = baseYAt(focusX);
 
   const fade = interpolate(
     frame,
