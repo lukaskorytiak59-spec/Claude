@@ -229,13 +229,14 @@ export const Timeline: React.FC = () => {
     extrapolateRight: 'clamp',
   });
 
-  // Camera follows the tip of the line once it passes the middle of the view
-  const cameraX = interpolate(
-    tipX,
-    [1100, LINE_END_X],
-    [0, SCENE_WIDTH - VIEW_WIDTH],
-    {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}
+  // Camera zoomed in on the action, following the tip of the yellow line
+  const ZOOM = 1.35;
+  const halfViewW = VIEW_WIDTH / 2 / ZOOM;
+  const focusX = Math.min(
+    Math.max(tipX + 120, halfViewW),
+    SCENE_WIDTH - halfViewW
   );
+  const focusY = TIMELINE_Y;
 
   const fade = interpolate(
     frame,
@@ -251,7 +252,10 @@ export const Timeline: React.FC = () => {
           position: 'absolute',
           width: SCENE_WIDTH,
           height: 1080,
-          transform: `translateX(${-cameraX}px)`,
+          transformOrigin: '0 0',
+          transform: `translate(${VIEW_WIDTH / 2 - focusX * ZOOM}px, ${
+            540 - focusY * ZOOM
+          }px) scale(${ZOOM})`,
         }}
       >
         {EVENTS.map((e, i) => (
