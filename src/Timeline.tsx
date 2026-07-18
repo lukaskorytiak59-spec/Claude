@@ -30,10 +30,10 @@ type TimelineEvent = {
 };
 
 const EVENTS: TimelineEvent[] = [
-  {x: 520, year: '1862', side: 'up'},
-  {x: 1270, year: '1875', side: 'down'},
-  {x: 2020, year: '1889', side: 'up'},
-  {x: 2770, year: '1904', side: 'down'},
+  {x: 520, year: 'MAY 1945', side: 'up'},
+  {x: 1270, year: '', side: 'down'},
+  {x: 2020, year: '', side: 'up'},
+  {x: 2770, year: '', side: 'down'},
 ];
 
 // Placeholder circles that held the images in the original composition
@@ -254,15 +254,15 @@ export const Timeline: React.FC = () => {
           transform: `translateX(${-cameraX}px)`,
         }}
       >
-        {EVENTS.map((e) => (
-          <Connector key={`c-${e.year}`} event={e} />
+        {EVENTS.map((e, i) => (
+          <Connector key={`c-${i}`} event={e} />
         ))}
         <YellowLine />
-        {EVENTS.map((e) => (
-          <Node key={`n-${e.year}`} event={e} />
+        {EVENTS.map((e, i) => (
+          <Node key={`n-${i}`} event={e} />
         ))}
-        {EVENTS.map((e) => (
-          <YearLabel key={`y-${e.year}`} event={e} />
+        {EVENTS.filter((e) => e.year).map((e, i) => (
+          <YearLabel key={`y-${i}`} event={e} />
         ))}
       </div>
     </AbsoluteFill>
