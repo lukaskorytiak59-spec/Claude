@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   AbsoluteFill,
+  Easing,
   interpolate,
   spring,
   useCurrentFrame,
@@ -17,7 +18,6 @@ const TIMELINE_Y = 540;
 
 const LINE_START_X = 120;
 const LINE_END_X = 3280;
-const LINE_DRAW_FRAMES = 300; // frames it takes the yellow line to cross the scene
 
 export const TIMELINE_DURATION = 360;
 
@@ -25,16 +25,51 @@ type Side = 'up' | 'down';
 
 type TimelineEvent = {
   x: number;
+  at: number; // frame at which the line tip arrives at this node
   year: string;
   side: Side;
 };
 
 const EVENTS: TimelineEvent[] = [
-  {x: 520, year: 'MAY 1945', side: 'up'},
-  {x: 1270, year: '', side: 'down'},
-  {x: 2020, year: '', side: 'up'},
-  {x: 2770, year: '', side: 'down'},
+  {x: 520, at: 30, year: 'MAY 1945', side: 'up'},
+  {x: 1270, at: 105, year: '', side: 'down'},
+  {x: 2020, at: 180, year: '', side: 'up'},
+  {x: 2770, at: 255, year: '', side: 'down'},
 ];
+
+// The tip of the yellow line pauses at every node for ~1.5 s, then speeds
+// off to the next one. Pairs of identical x values are the pauses.
+const TIP_KEYFRAMES: {frame: number; x: number}[] = [
+  {frame: 0, x: LINE_START_X},
+  {frame: 30, x: 520},
+  {frame: 75, x: 520},
+  {frame: 105, x: 1270},
+  {frame: 150, x: 1270},
+  {frame: 180, x: 2020},
+  {frame: 225, x: 2020},
+  {frame: 255, x: 2770},
+  {frame: 300, x: 2770},
+  {frame: 330, x: LINE_END_X},
+];
+
+const tipXAt = (frame: number): number => {
+  const first = TIP_KEYFRAMES[0];
+  const last = TIP_KEYFRAMES[TIP_KEYFRAMES.length - 1];
+  if (frame <= first.frame) return first.x;
+  if (frame >= last.frame) return last.x;
+
+  for (let i = 0; i < TIP_KEYFRAMES.length - 1; i++) {
+    const a = TIP_KEYFRAMES[i];
+    const b = TIP_KEYFRAMES[i + 1];
+    if (frame >= a.frame && frame <= b.frame) {
+      const t = (frame - a.frame) / (b.frame - a.frame);
+      // Ease each travel segment: slow start out of the pause, fast middle
+      const eased = Easing.inOut(Easing.cubic)(t);
+      return a.x + (b.x - a.x) * eased;
+    }
+  }
+  return last.x;
+};
 
 // Placeholder circles that held the images in the original composition
 const CIRCLE_RADIUS = 115;
@@ -44,10 +79,6 @@ const CIRCLE_OFFSET_Y = 265; // vertical distance from the timeline
 const glow = (color: string, size: number) =>
   `drop-shadow(0 0 ${size}px ${color})`;
 
-// Frame at which the yellow line tip reaches a given x position
-const frameAtX = (x: number) =>
-  ((x - LINE_START_X) / (LINE_END_X - LINE_START_X)) * LINE_DRAW_FRAMES;
-
 // ---------------------------------------------------------------------------
 // Pieces
 // ---------------------------------------------------------------------------
@@ -55,7 +86,7 @@ const frameAtX = (x: number) =>
 const Node: React.FC<{event: TimelineEvent}> = ({event}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const local = frame - frameAtX(event.x);
+  const local = frame - event.at;
 
   const scale = spring({
     frame: local,
@@ -86,7 +117,7 @@ const Node: React.FC<{event: TimelineEvent}> = ({event}) => {
 
 const YearLabel: React.FC<{event: TimelineEvent}> = ({event}) => {
   const frame = useCurrentFrame();
-  const local = frame - frameAtX(event.x) - 6;
+  const local = frame - event.at - 6;
 
   const opacity = interpolate(local, [0, 12], [0, 1], {
     extrapolateLeft: 'clamp',
@@ -126,7 +157,7 @@ const YearLabel: React.FC<{event: TimelineEvent}> = ({event}) => {
 const Connector: React.FC<{event: TimelineEvent}> = ({event}) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
-  const local = frame - frameAtX(event.x) - 8;
+  const local = frame - event.at - 8;
 
   const dir = event.side === 'up' ? -1 : 1;
   const nodeY = TIMELINE_Y + dir * 26;
@@ -195,10 +226,7 @@ const Connector: React.FC<{event: TimelineEvent}> = ({event}) => {
 
 const YellowLine: React.FC = () => {
   const frame = useCurrentFrame();
-  const tipX = interpolate(frame, [0, LINE_DRAW_FRAMES], [LINE_START_X, LINE_END_X], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+  const tipX = tipXAt(frame);
 
   return (
     <div
@@ -224,10 +252,7 @@ export const Timeline: React.FC = () => {
   const frame = useCurrentFrame();
   const {durationInFrames} = useVideoConfig();
 
-  const tipX = interpolate(frame, [0, LINE_DRAW_FRAMES], [LINE_START_X, LINE_END_X], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+  const tipX = tipXAt(frame);
 
   // Camera zoomed in on the action, following the tip of the yellow line
   const ZOOM = 1.35;
