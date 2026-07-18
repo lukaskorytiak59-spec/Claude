@@ -2,8 +2,10 @@ import React from 'react';
 import {
   AbsoluteFill,
   Easing,
+  Img,
   interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
@@ -28,10 +30,11 @@ type TimelineEvent = {
   at: number; // frame at which the line tip arrives at this node
   year: string;
   side: Side;
+  img?: string; // file in public/ shown clipped inside the circle
 };
 
 const EVENTS: TimelineEvent[] = [
-  {x: 520, at: 30, year: 'MAY 1945', side: 'up'},
+  {x: 520, at: 30, year: 'MAY 1945', side: 'up', img: 'may1945.png'},
   {x: 1270, at: 105, year: '', side: 'down'},
   {x: 2020, at: 180, year: '', side: 'up'},
   {x: 2770, at: 255, year: '', side: 'down'},
@@ -224,6 +227,68 @@ const Connector: React.FC<{event: TimelineEvent}> = ({event}) => {
   );
 };
 
+/**
+ * Photo clipped inside the circle, revealed gradually: the circular
+ * mask grows from the centre while the photo fades in and settles
+ * from a slight zoom.
+ */
+const EventImage: React.FC<{event: TimelineEvent}> = ({event}) => {
+  const frame = useCurrentFrame();
+  const local = frame - event.at - 8;
+
+  if (!event.img || local < 24) return null;
+
+  const dir = event.side === 'up' ? -1 : 1;
+  const cx = event.x + CIRCLE_OFFSET_X;
+  const cy = TIMELINE_Y + dir * CIRCLE_OFFSET_Y;
+
+  const reveal = interpolate(local, [24, 50], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.out(Easing.cubic),
+  });
+  const opacity = interpolate(local, [24, 40], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+  // Photo starts zoomed in and gently settles down
+  const photoScale = interpolate(local, [24, 70], [1.25, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.out(Easing.quad),
+  });
+
+  const maskR = (CIRCLE_RADIUS - 3) * reveal;
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: cx - maskR,
+        top: cy - maskR,
+        width: maskR * 2,
+        height: maskR * 2,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        opacity,
+      }}
+    >
+      <Img
+        src={staticFile(event.img)}
+        style={{
+          position: 'absolute',
+          left: maskR - (CIRCLE_RADIUS - 3),
+          top: maskR - (CIRCLE_RADIUS - 3),
+          width: (CIRCLE_RADIUS - 3) * 2,
+          height: (CIRCLE_RADIUS - 3) * 2,
+          objectFit: 'cover',
+          transform: `scale(${photoScale})`,
+        }}
+      />
+    </div>
+  );
+};
+
 const YellowLine: React.FC = () => {
   const frame = useCurrentFrame();
   const tipX = tipXAt(frame);
@@ -285,6 +350,9 @@ export const Timeline: React.FC = () => {
       >
         {EVENTS.map((e, i) => (
           <Connector key={`c-${i}`} event={e} />
+        ))}
+        {EVENTS.map((e, i) => (
+          <EventImage key={`i-${i}`} event={e} />
         ))}
         <YellowLine />
         {EVENTS.map((e, i) => (
