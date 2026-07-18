@@ -21,7 +21,7 @@ const TIMELINE_Y = 540;
 const LINE_START_X = 120;
 const LINE_END_X = 3280;
 
-export const TIMELINE_DURATION = 360;
+export const TIMELINE_DURATION = 300;
 
 type Side = 'up' | 'down';
 
@@ -36,25 +36,25 @@ type TimelineEvent = {
 };
 
 const EVENTS: TimelineEvent[] = [
-  {x: 520, at: 30, year: 'MAY 1945', side: 'up', img: 'may1945.png'},
-  {x: 1270, at: 105, year: 'DESTROYED EUROPE', side: 'down', labelDy: 8},
-  {x: 2020, at: 180, year: '60 MILLION DEAD', side: 'up', labelAt: 'line'},
-  {x: 2770, at: 255, year: '', side: 'down'},
+  {x: 520, at: 25, year: 'MAY 1945', side: 'up', img: 'may1945.png'},
+  {x: 1270, at: 88, year: 'DESTROYED EUROPE', side: 'down', labelDy: 8},
+  {x: 2020, at: 150, year: '60 MILLION DEAD', side: 'up', labelAt: 'line'},
+  {x: 2770, at: 212, year: '', side: 'down'},
 ];
 
 // The tip of the yellow line pauses at every node for ~1.5 s, then speeds
 // off to the next one. Pairs of identical x values are the pauses.
 const TIP_KEYFRAMES: {frame: number; x: number}[] = [
   {frame: 0, x: LINE_START_X},
-  {frame: 30, x: 520},
-  {frame: 75, x: 520},
-  {frame: 105, x: 1270},
-  {frame: 150, x: 1270},
-  {frame: 180, x: 2020},
-  {frame: 225, x: 2020},
-  {frame: 255, x: 2770},
-  {frame: 300, x: 2770},
-  {frame: 330, x: LINE_END_X},
+  {frame: 25, x: 520},
+  {frame: 62, x: 520},
+  {frame: 88, x: 1270},
+  {frame: 125, x: 1270},
+  {frame: 150, x: 2020},
+  {frame: 188, x: 2020},
+  {frame: 212, x: 2770},
+  {frame: 250, x: 2770},
+  {frame: 275, x: LINE_END_X},
 ];
 
 const tipXAt = (frame: number): number => {
@@ -125,13 +125,13 @@ const YearLabel: React.FC<{event: TimelineEvent}> = ({event}) => {
   const onLine = event.labelAt === 'line';
   // Circle labels start typing once the elbow connector has been drawn;
   // line labels start right away, written out from the yellow line
-  const local = frame - event.at - (onLine ? 6 : 24);
+  const local = frame - event.at - (onLine ? 6 : 22);
 
   if (local < 0) return null;
 
   // Typewriter: characters appear one by one
   const charsShown = Math.floor(
-    interpolate(local, [0, 18], [0, event.year.length], {
+    interpolate(local, [0, 14], [0, event.year.length], {
       extrapolateLeft: 'clamp',
       extrapolateRight: 'clamp',
     })
