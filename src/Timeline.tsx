@@ -77,7 +77,7 @@ const tipXAt = (frame: number): number => {
 // Placeholder circles that held the images in the original composition
 const CIRCLE_RADIUS = 115;
 const CIRCLE_OFFSET_X = 300; // horizontal distance from node to circle centre
-const CIRCLE_OFFSET_Y = 265; // vertical distance from the timeline
+const CIRCLE_OFFSET_Y = 218; // vertical distance from the timeline
 
 const glow = (color: string, size: number) =>
   `drop-shadow(0 0 ${size}px ${color})`;
@@ -122,14 +122,16 @@ const YearLabel: React.FC<{event: TimelineEvent}> = ({event}) => {
   const frame = useCurrentFrame();
   const local = frame - event.at - 6;
 
-  const opacity = interpolate(local, [0, 12], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-  const shift = interpolate(local, [0, 12], [24, 0], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+  if (local < 0) return null;
+
+  // Typewriter: characters appear one by one
+  const charsShown = Math.floor(
+    interpolate(local, [0, 28], [0, event.year.length], {
+      extrapolateLeft: 'clamp',
+      extrapolateRight: 'clamp',
+    })
+  );
+  const visible = event.year.slice(0, charsShown);
 
   return (
     <div
@@ -142,13 +144,11 @@ const YearLabel: React.FC<{event: TimelineEvent}> = ({event}) => {
         fontSize: 84,
         color: '#fff',
         letterSpacing: 2,
-        opacity,
-        transform: `translateX(${shift}px)`,
         filter: glow('rgba(255,255,255,0.7)', 10),
-        whiteSpace: 'nowrap',
+        whiteSpace: 'pre',
       }}
     >
-      {event.year}
+      {visible}
     </div>
   );
 };
@@ -320,7 +320,7 @@ export const Timeline: React.FC = () => {
   const tipX = tipXAt(frame);
 
   // Camera zoomed in on the action, following the tip of the yellow line
-  const ZOOM = 1.35;
+  const ZOOM = 1.6;
   const halfViewW = VIEW_WIDTH / 2 / ZOOM;
   const focusX = Math.min(
     Math.max(tipX + 120, halfViewW),
