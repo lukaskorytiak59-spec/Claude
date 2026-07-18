@@ -39,7 +39,7 @@ const EVENTS: TimelineEvent[] = [
   {x: 520, at: 25, year: 'MAY 1945', side: 'up', img: 'may1945.png'},
   {x: 1270, at: 88, year: 'DESTROYED EUROPE', side: 'down', labelDy: 8},
   {x: 2020, at: 150, year: '60 MILLION DEAD', side: 'up', labelAt: 'line'},
-  {x: 2770, at: 212, year: '', side: 'down'},
+  {x: 2770, at: 212, year: '1947', side: 'down'},
 ];
 
 // The tip of the yellow line pauses at every node for ~1.5 s, then speeds
