@@ -35,7 +35,7 @@ type TimelineEvent = {
 
 const EVENTS: TimelineEvent[] = [
   {x: 520, at: 30, year: 'MAY 1945', side: 'up', img: 'may1945.png'},
-  {x: 1270, at: 105, year: '', side: 'down'},
+  {x: 1270, at: 105, year: 'DESTROYED EUROPE', side: 'down'},
   {x: 2020, at: 180, year: '', side: 'up'},
   {x: 2770, at: 255, year: '', side: 'down'},
 ];
@@ -141,7 +141,7 @@ const YearLabel: React.FC<{event: TimelineEvent}> = ({event}) => {
         top: TIMELINE_Y - 52,
         fontFamily: 'Arial, Helvetica, sans-serif',
         fontWeight: 900,
-        fontSize: 84,
+        fontSize: event.year.length > 10 ? 56 : 84,
         color: '#fff',
         letterSpacing: 2,
         filter: glow('rgba(255,255,255,0.7)', 10),
