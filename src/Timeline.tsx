@@ -14,7 +14,7 @@ import {
 // Scene layout
 // ---------------------------------------------------------------------------
 
-const SCENE_WIDTH = 3400;
+const SCENE_WIDTH = 3500;
 const VIEW_WIDTH = 1920;
 const TIMELINE_Y = 540;
 
@@ -76,7 +76,7 @@ const tipXAt = (frame: number): number => {
 
 // Placeholder circles that held the images in the original composition
 const CIRCLE_RADIUS = 115;
-const CIRCLE_OFFSET_X = 300; // horizontal distance from node to circle centre
+const CIRCLE_OFFSET_X = 560; // horizontal distance from node to circle centre
 const CIRCLE_OFFSET_Y = 218; // vertical distance from the timeline
 
 const glow = (color: string, size: number) =>
@@ -120,28 +120,39 @@ const Node: React.FC<{event: TimelineEvent}> = ({event}) => {
 
 const YearLabel: React.FC<{event: TimelineEvent}> = ({event}) => {
   const frame = useCurrentFrame();
-  const local = frame - event.at - 6;
+  // Starts typing once the elbow connector has been drawn
+  const local = frame - event.at - 24;
 
   if (local < 0) return null;
 
   // Typewriter: characters appear one by one
   const charsShown = Math.floor(
-    interpolate(local, [0, 28], [0, event.year.length], {
+    interpolate(local, [0, 18], [0, event.year.length], {
       extrapolateLeft: 'clamp',
       extrapolateRight: 'clamp',
     })
   );
   const visible = event.year.slice(0, charsShown);
 
+  // Sits above the horizontal connector segment, between the elbow
+  // corner and the circle — sized so the full text fits there
+  const dir = event.side === 'up' ? -1 : 1;
+  const elbowY = TIMELINE_Y + dir * CIRCLE_OFFSET_Y;
+  const available = CIRCLE_OFFSET_X - CIRCLE_RADIUS - 55;
+  const fontSize = Math.min(
+    84,
+    Math.floor(available / (0.62 * event.year.length))
+  );
+
   return (
     <div
       style={{
         position: 'absolute',
-        left: event.x + 48,
-        top: TIMELINE_Y - 52,
+        left: event.x + 35,
+        top: elbowY - fontSize - 16,
         fontFamily: 'Arial, Helvetica, sans-serif',
         fontWeight: 900,
-        fontSize: event.year.length > 10 ? 56 : 84,
+        fontSize,
         color: '#fff',
         letterSpacing: 2,
         filter: glow('rgba(255,255,255,0.7)', 10),
