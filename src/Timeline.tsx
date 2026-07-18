@@ -31,12 +31,14 @@ type TimelineEvent = {
   year: string;
   side: Side;
   img?: string; // file in public/ shown clipped inside the circle
+  labelDy?: number; // small vertical nudge for the label
+  labelAt?: 'circle' | 'line'; // where the text is written (default circle)
 };
 
 const EVENTS: TimelineEvent[] = [
   {x: 520, at: 30, year: 'MAY 1945', side: 'up', img: 'may1945.png'},
-  {x: 1270, at: 105, year: 'DESTROYED EUROPE', side: 'down'},
-  {x: 2020, at: 180, year: '', side: 'up'},
+  {x: 1270, at: 105, year: 'DESTROYED EUROPE', side: 'down', labelDy: 8},
+  {x: 2020, at: 180, year: '60 MILLION DEAD', side: 'up', labelAt: 'line'},
   {x: 2770, at: 255, year: '', side: 'down'},
 ];
 
@@ -120,8 +122,10 @@ const Node: React.FC<{event: TimelineEvent}> = ({event}) => {
 
 const YearLabel: React.FC<{event: TimelineEvent}> = ({event}) => {
   const frame = useCurrentFrame();
-  // Starts typing once the elbow connector has been drawn
-  const local = frame - event.at - 24;
+  const onLine = event.labelAt === 'line';
+  // Circle labels start typing once the elbow connector has been drawn;
+  // line labels start right away, written out from the yellow line
+  const local = frame - event.at - (onLine ? 6 : 24);
 
   if (local < 0) return null;
 
@@ -134,22 +138,25 @@ const YearLabel: React.FC<{event: TimelineEvent}> = ({event}) => {
   );
   const visible = event.year.slice(0, charsShown);
 
-  // Sits above the horizontal connector segment, between the elbow
-  // corner and the circle — sized so the full text fits there
   const dir = event.side === 'up' ? -1 : 1;
   const elbowY = TIMELINE_Y + dir * CIRCLE_OFFSET_Y;
-  const available = CIRCLE_OFFSET_X - CIRCLE_RADIUS - 55;
-  const fontSize = Math.min(
-    84,
-    Math.floor(available / (0.62 * event.year.length))
-  );
+  // Circle labels sit above the horizontal connector segment, between
+  // the elbow corner and the circle — sized so the full text fits there
+  const available = CIRCLE_OFFSET_X - CIRCLE_RADIUS - 100;
+  const fontSize = onLine
+    ? 64
+    : Math.min(84, Math.floor(available / (0.66 * event.year.length)));
+  const left = onLine ? event.x + 48 : event.x + 35;
+  const top = onLine
+    ? TIMELINE_Y - 90 + (event.labelDy ?? 0)
+    : elbowY - fontSize - 16 + (event.labelDy ?? 0);
 
   return (
     <div
       style={{
         position: 'absolute',
-        left: event.x + 35,
-        top: elbowY - fontSize - 16,
+        left,
+        top,
         fontFamily: 'Arial, Helvetica, sans-serif',
         fontWeight: 900,
         fontSize,
